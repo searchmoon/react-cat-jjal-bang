@@ -1,5 +1,5 @@
 import React from "react";
-import {useState} from "react";
+import { useState } from "react";
 
 const Form = ({ updateMainCat }) => {
     const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
@@ -22,7 +22,7 @@ const Form = ({ updateMainCat }) => {
             setErrorMessage('빈 값으로 만들 수 없습니다.')
             return
         }
-        updateMainCat();
+        updateMainCat(value);
     }
 
     return (

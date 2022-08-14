@@ -1,109 +1,74 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react'
+import './App.css'
+import Title from './components/Title';
+import MainCard from './components/MainCard';
+import Favorites from './components/Favorites';
 import Form from './components/Form';
 
-function App() {
-    const jsonLocalStorage = {
-        setItem: (key, value) => {
-            localStorage.setItem(key, JSON.stringify(value));
-        },
-        getItem: (key) => {
-            return JSON.parse(localStorage.getItem(key));
-        },
-    };
-    const Title = (props) => {
-        return (
-            <div>
-                <h1>{props.children}</h1>
-            </div>
-        )
-    }
+const jsonLocalStorage = {
+  setItem: (key, value) => {
+    localStorage.setItem(key, JSON.stringify(value));
+  },
+  getItem: (key) => {
+    return JSON.parse(localStorage.getItem(key));
+  },
+};
+const fetchCat = async (text) => {
+  const OPEN_API_DOMAIN = "https://cataas.com";
+  const response = await fetch(`${OPEN_API_DOMAIN}/cat/says/${text}?json=true`);
+  const responseJson = await response.json();
+  return `${OPEN_API_DOMAIN}/${responseJson.url}`;
+};
 
-    // const Form = ({ updateMainCat }) => {
-    //     const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
-    //     const [value, setValue] = useState('')
-    //     const [errorMessage, setErrorMessage] = useState('')
-    //
-    //     const handleInputChange = (e) => {
-    //         const userValue = e.target.value;
-    //         setErrorMessage('')
-    //         if (includesHangul(userValue)) {
-    //             setErrorMessage('한글은 입력할 수 없습니다.')
-    //         }
-    //         setValue(userValue.toUpperCase())
-    //     }
-    //     const handleFormSubmit = (e) => {
-    //         e.preventDefault();
-    //         setErrorMessage('')
-    //
-    //         if (value === '') {
-    //             setErrorMessage('빈 값으로 만들 수 없습니다.')
-    //             return
-    //         }
-    //         updateMainCat();
-    //     }
-    //
-    //     return (
-    //         <form onSubmit={handleFormSubmit}>
-    //             <input type="text" name="name" placeholder="영어 대사를 입력해주세요" value={value} onChange={handleInputChange} />
-    //             <button type="submit">생성</button>
-    //             <p style={{ color: 'red' }}>{errorMessage}</p>
-    //         </form>
-    //     )
-    // }
+const App = () => {
+  const CAT1 = "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
+  const CAT2 = "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
+  const CAT3 = "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
+  const [counter, setCounter] = useState(() => {
+    return jsonLocalStorage.getItem("counter");
+  })
+  // localStorage의 불필요한 호출을 줄이기 위해 useState 안에 함수를 넣어줌. 한번만 호출되게 하기 위해
+  //localStorage로 가져온 값이 string값으로 가져와지기 떄문에 number로 바꿔야 counter값이 제대로 잘 더해진다.
+  const [mainCat, setMainCat] = useState(CAT1);
+  const [favorites, setFavorites] = useState(() => {
+    return jsonLocalStorage.getItem("favorites") || []
+  })
+  const alreadyFavorite = favorites.includes(mainCat)
 
-    function CatItem(props) {
-        return (
-            <li>
-                <img src={props.img} style={{ width: "150px" }} />
-            </li>
-        )
-    }
-    function Favorites({ favorites }) {
+  const setInitialCat = async () => {
+    const newCat = await fetchCat('First cat');
+    setMainCat(newCat);
+  }
 
-        return (
-            <ul className="favorites">
-                {favorites.map((cat) => (
-                    <CatItem key={cat} img={cat} />
-                ))}
-            </ul>
-        )
-    }
-    const MainCard = ({ img, onHeartClick }) => {
+  useEffect(() => {
+    setInitialCat()
+  }, [])
+  const updateMainCat = async (value) => {
+    const newCat = await fetchCat(value)
 
-        return (
-            <div className="main-card">
-                <img src={img} alt="고양이" width="400" />
-                <button onClick={onHeartClick}>🤍</button>
-            </div>
-        )
-    }
-    const CAT1 = "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
-    const CAT2 = "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
-    const CAT3 = "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
-    const [counter, setCounter] = useState(jsonLocalStorage.getItem("counter"));
-    //localStorage로 가져온 값이 string값으로 가져와지기 떄문에 number로 바꿔야 counter값이 제대로 잘 더해진다.
-    const [mainCat, setMainCat] = useState(CAT1);
-    const [favorites, setFavorites] = useState(jsonLocalStorage.getItem("favorites") || [])
+    setMainCat(newCat)
 
-    const updateMainCat = () => {
-        setMainCat(CAT2)
-        const nextCounter = counter + 1
-        setCounter(nextCounter)
-        jsonLocalStorage.setItem("counter", nextCounter)
-    }
-    function handleHeartClick() {
-        const nextFavorites = [...favorites, mainCat]
-        setFavorites(nextFavorites)
-        jsonLocalStorage.setItem('favorites', nextFavorites)
-    }
+    setCounter((prev) => {
+      const nextCounter = prev + 1;
+      jsonLocalStorage.setItem('counter', nextCounter);
+      return nextCounter;
+    })
+  }
+
+  function handleHeartClick() {
+    const nextFavorites = [...favorites, mainCat]
+    setFavorites(nextFavorites)
+    jsonLocalStorage.setItem('favorites', nextFavorites)
+  }
+  const counterTitle = counter === null ? '' : `${counter}번째 `
   return (
-    <div className="App">
-        <Title>{counter}번째 고양이 가라사대</Title>
-        <Form updateMainCat={updateMainCat} />
-        <MainCard img={mainCat} onHeartClick={handleHeartClick} />
-        <Favorites favorites={favorites} />
+    <div>
+      <Title>{counterTitle}고양이 가라사대</Title>
+      <Form updateMainCat={updateMainCat} />
+      <MainCard img={mainCat} onHeartClick={handleHeartClick} alreadyFavorite={alreadyFavorite} />
+      <Favorites favorites={favorites} />
     </div>
-  );
+  )
 }
 
 export default App;
